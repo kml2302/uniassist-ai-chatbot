@@ -15,6 +15,10 @@ UniAssist is an AI-powered chatbot designed to help students with university-rel
 - HTML
 - CSS
 - JavaScript
+- 
+- ## 📸 Screenshots
+- <img width="1536" height="1024" alt="unibot" src="https://github.com/user-attachments/assets/1bfe30e0-a993-427e-9f44-db562c7877ac" />
+- 
 ## ▶️ How to Run
 1. Install dependencies  
 2. Run `app.py`  
