@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="theme-color" content="#2563eb">
+<meta name="description" content="UniAssist - Your intelligent university AI companion">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+  <title>UniAssist - University AI Assistant</title>
+  <script src="/static/marked.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff; --bg2: #f9fafb; --bg3: #f3f4f6;
+      --sidebar: #111827; --sidebar-hover: #1f2937;
+      --sidebar-text: #d1d5db; --sidebar-text-muted: #6b7280;
+      --accent: #2563eb; --accent-hover: #1d4ed8;
+      --text: #111827; --text2: #6b7280;
+      --border: #e5e7eb; --bubble-bot: #f3f4f6;
+      --bubble-user: #2563eb; --input-bg: #ffffff;
+    }
+    body.dark {
+      --bg: #1a1a2e; --bg2: #16213e; --bg3: #0f3460;
+      --sidebar: #0d0d1a; --sidebar-hover: #1a1a2e;
+      --sidebar-text: #e2e8f0; --sidebar-text-muted: #64748b;
+      --accent: #3b82f6; --accent-hover: #2563eb;
+      --text: #f1f5f9; --text2: #94a3b8;
+      --border: #1e293b; --bubble-bot: #1e293b;
+      --bubble-user: #2563eb; --input-bg: #1e293b;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; transition: all 0.3s; }
+
+    /* Auth Screen */
+    #auth-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #1e3a8a, #2563eb); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    .auth-card { background: white; border-radius: 24px; padding: 40px; width: 420px; box-shadow: 0 25px 60px rgba(0,0,0,0.3); }
+    .auth-logo { text-align: center; margin-bottom: 24px; }
+    .auth-logo .icon { font-size: 48px; }
+    .auth-logo h1 { font-size: 24px; font-weight: 700; color: #111827; margin-top: 8px; }
+    .auth-logo p { color: #6b7280; font-size: 14px; margin-top: 4px; }
+    .auth-tabs { display: flex; background: #f3f4f6; border-radius: 10px; padding: 4px; margin-bottom: 24px; }
+    .auth-tab { flex: 1; padding: 8px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #6b7280; border: none; background: none; transition: all 0.2s; }
+    .auth-tab.active { background: white; color: #111827; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .auth-form { display: none; flex-direction: column; gap: 12px; }
+    .auth-form.active { display: flex; }
+    .pass-wrap { position: relative; }
+    .pass-wrap input { width: 100%; padding: 12px 44px 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; outline: none; transition: border 0.2s; }
+    .pass-wrap input:focus { border-color: #2563eb; }
+    .pass-wrap .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: #6b7280; padding: 0; }
+    .auth-form input[type="email"], .auth-form input[type="text"] { padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; outline: none; transition: border 0.2s; width: 100%; }
+    .auth-form input[type="email"]:focus, .auth-form input[type="text"]:focus { border-color: #2563eb; }
+    .remember-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6b7280; }
+    .remember-row input { width: auto; margin: 0; }
+    .auth-form button { padding: 12px; background: #2563eb; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .auth-form button:hover { background: #1d4ed8; }
+    .auth-error { color: #ef4444; font-size: 13px; text-align: center; display: none; }
+
+    /* Key Screen */
+    #key-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #1e3a8a, #2563eb); display: none; justify-content: center; align-items: center; z-index: 99; }
+    .key-card { background: white; border-radius: 24px; padding: 40px; width: 420px; box-shadow: 0 25px 60px rgba(0,0,0,0.3); text-align: center; }
+    .key-card .logo { font-size: 48px; margin-bottom: 12px; }
+    .key-card h2 { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+    .key-card p { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
+    .key-wrap { position: relative; margin-bottom: 12px; }
+    .key-wrap input { width: 100%; padding: 12px 44px 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; outline: none; transition: border 0.2s; }
+    .key-wrap input:focus { border-color: #2563eb; }
+    .key-wrap .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: #6b7280; }
+    .key-card button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .key-card button:hover { background: #1d4ed8; }
+    #key-error { color: #ef4444; font-size: 13px; margin-top: 8px; }
+    .key-card .get-key { margin-top: 16px; font-size: 12px; color: #6b7280; }
+    .key-card .get-key a { color: #2563eb; text-decoration: none; }
+
+    /* Sidebar */
+    #sidebar { width: 260px; background: var(--sidebar); display: flex; flex-direction: column; flex-shrink: 0; transition: all 0.3s; }
+    #sidebar-header { padding: 20px 16px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon { width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .brand-name { color: white; font-size: 16px; font-weight: 700; }
+    .brand-sub { color: var(--sidebar-text-muted); font-size: 11px; }
+    #new-chat-btn { margin: 12px 16px; padding: 10px 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: var(--sidebar-text); font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; }
+    #new-chat-btn:hover { background: rgba(255,255,255,0.15); }
+    #sidebar-chats { flex: 1; overflow-y: auto; padding: 8px; }
+    #sidebar-chats::-webkit-scrollbar { width: 4px; }
+    #sidebar-chats::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    .chat-section-label { color: var(--sidebar-text-muted); font-size: 11px; padding: 8px 8px 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .chat-item { padding: 10px 12px; border-radius: 8px; color: var(--sidebar-text); font-size: 13px; display: flex; align-items: center; gap: 8px; transition: background 0.15s; position: relative; cursor: pointer; }
+    .chat-item:hover { background: var(--sidebar-hover); }
+    .chat-item.active { background: var(--sidebar-hover); border-left: 3px solid #2563eb; }
+    .chat-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-item:hover .delete-chat { display: flex; }
+    .delete-chat { display: none; background: rgba(255,255,255,0.1); border: none; color: #9ca3af; border-radius: 6px; width: 22px; height: 22px; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; flex-shrink: 0; }
+    .delete-chat:hover { background: #ef4444; color: white; }
+    #sidebar-footer { padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 4px; }
+    .user-info { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 4px; }
+    .user-avatar { width: 32px; height: 32px; background: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+    .user-details .user-name { color: white; font-size: 13px; font-weight: 500; }
+    .user-details .user-email { color: var(--sidebar-text-muted); font-size: 11px; }
+    .sidebar-btn { padding: 10px 12px; border-radius: 8px; cursor: pointer; color: var(--sidebar-text); font-size: 13px; display: flex; align-items: center; gap: 8px; transition: background 0.15s; background: none; border: none; width: 100%; text-align: left; }
+    .sidebar-btn:hover { background: var(--sidebar-hover); }
+
+    /* Main */
+    #main { flex: 1; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
+    #chat-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--bg); }
+    #chat-header h2 { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hdr-btn { background: var(--bg3); border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 14px; color: var(--text); transition: background 0.15s; }
+    .hdr-btn:hover { background: var(--border); }
+
+    /* Messages */
+    #messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; }
+    #messages::-webkit-scrollbar { width: 6px; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    #welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 40px 24px; text-align: center; }
+    #welcome .welcome-icon { font-size: 64px; margin-bottom: 20px; }
+    #welcome h2 { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+    #welcome p { color: var(--text2); font-size: 16px; max-width: 480px; margin-bottom: 32px; line-height: 1.6; }
+    .suggestion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 560px; }
+    .suggestion-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; text-align: left; transition: all 0.15s; }
+    .suggestion-card:hover { border-color: var(--accent); background: var(--bg3); }
+    .suggestion-card .s-icon { font-size: 20px; margin-bottom: 8px; }
+    .suggestion-card .s-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .suggestion-card .s-desc { font-size: 12px; color: var(--text2); }
+
+    /* Messages */
+    .msg-row { display: flex; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--border); animation: fadeIn 0.3s ease; }
+    .msg-row:last-child { border-bottom: none; }
+    .msg-row.user { flex-direction: row-reverse; }
+    .msg-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+    .msg-row.bot .msg-avatar { background: #2563eb; }
+    .msg-row.user .msg-avatar { background: #7c3aed; color: white; font-size: 13px; font-weight: 600; }
+    .msg-content { flex: 1; max-width: 75%; }
+    .msg-name { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+    .msg-row.user .msg-name { text-align: right; }
+    .msg-bubble { padding: 14px 18px; border-radius: 16px; font-size: 15px; line-height: 1.7; color: var(--text); background: var(--bubble-bot); }
+    .msg-row.user .msg-bubble { background: var(--bubble-user); color: white; border-radius: 16px 4px 16px 16px; }
+    .msg-row.bot .msg-bubble { border-radius: 4px 16px 16px 16px; }
+    .msg-bubble p { margin: 0 0 10px; }
+    .msg-bubble p:last-child { margin-bottom: 0; }
+    .msg-bubble ul, .msg-bubble ol { padding-left: 20px; margin: 8px 0; }
+    .msg-bubble li { margin: 4px 0; }
+    .msg-bubble strong { font-weight: 700; }
+    .msg-bubble code { background: rgba(0,0,0,0.08); padding: 2px 8px; border-radius: 6px; font-size: 13px; font-family: monospace; }
+    .msg-row.user .msg-bubble code { background: rgba(255,255,255,0.2); }
+    .msg-bubble pre { background: rgba(0,0,0,0.08); padding: 14px; border-radius: 10px; overflow-x: auto; margin: 10px 0; }
+    .msg-bubble pre code { background: none; padding: 0; }
+    .msg-bubble h1, .msg-bubble h2, .msg-bubble h3 { font-weight: 700; margin: 12px 0 6px; }
+    .msg-bubble table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14px; }
+    .msg-bubble th, .msg-bubble td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+    .msg-bubble th { background: var(--bg3); font-weight: 600; }
+    .msg-bubble blockquote { border-left: 4px solid var(--accent); padding-left: 14px; color: var(--text2); margin: 8px 0; }
+    .msg-bubble a { color: var(--accent); text-decoration: underline; }
+
+    /* Typing */
+    .typing-row { display: flex; gap: 12px; padding: 16px 0; align-items: flex-start; }
+    .typing-bubble { display: flex; align-items: center; gap: 5px; padding: 14px 18px; background: var(--bubble-bot); border-radius: 4px 16px 16px 16px; }
+    .typing-bubble span { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; animation: typingBounce 1.4s infinite ease-in-out; }
+    .typing-bubble span:nth-child(1) { animation-delay: 0s; }
+    .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-8px);opacity:1} }
+    .cursor { display: inline-block; width: 2px; height: 1em; background: var(--accent); margin-left: 2px; vertical-align: middle; animation: blink 0.7s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    /* University Card */
+    .uni-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; max-width: 480px; margin: 8px 0; animation: fadeIn 0.4s ease; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .uni-card-img { width: 100%; height: 220px; object-fit: cover; display: block; }
+    .uni-card-no-img { width: 100%; height: 140px; background: linear-gradient(135deg, #1e3a8a, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 56px; }
+    .uni-card-info { padding: 16px 18px; }
+    .uni-card-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .uni-card-desc { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; }
+    .uni-card-link { display: inline-block; padding: 7px 16px; background: var(--accent); color: white; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; transition: background 0.2s; }
+    .uni-card-link:hover { background: var(--accent-hover); }
+
+    /* Input */
+    #input-area { padding: 20px 24px; border-top: 1px solid var(--border); background: var(--bg); }
+    #input-box { background: var(--input-bg); border: 2px solid var(--border); border-radius: 16px; padding: 14px 16px; display: flex; align-items: flex-end; gap: 10px; transition: border 0.2s; }
+    #input-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(37,99,235,0.08); }
+    #user-input { flex: 1; border: none; background: none; outline: none; font-size: 15px; font-family: inherit; color: var(--text); resize: none; max-height: 120px; line-height: 1.5; }
+    #user-input::placeholder { color: var(--text2); }
+    .input-btn { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 8px; font-size: 20px; color: var(--text2); transition: background 0.15s; }
+    .input-btn:hover { background: var(--bg3); }
+    #mic-btn.recording { background: #fee2e2; color: #ef4444; animation: pulse 1s infinite; border-radius: 8px; }
+    #send-btn { background: var(--accent); border: none; border-radius: 10px; width: 38px; height: 38px; cursor: pointer; color: white; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    #send-btn:hover { background: var(--accent-hover); transform: scale(1.05); }
+    .input-hint { text-align: center; font-size: 12px; color: var(--text2); margin-top: 10px; }
+
+    #sidebar-toggle { display: none; background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text); padding: 4px; }
+    @media (max-width: 768px) {
+      #sidebar { position: fixed; left: -260px; top: 0; bottom: 0; z-index: 50; transition: left 0.3s; }
+      #sidebar.open { left: 0; }
+      #sidebar-toggle { display: block; }
+      .suggestion-grid { grid-template-columns: 1fr; }
+      #messages { padding: 16px; }
+      #input-area { padding: 12px 16px; }
+      .msg-content { max-width: 90%; }
+      .auth-card { width: 90%; padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Auth Screen -->
+<div id="auth-screen" style="display:none;">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="icon">🎓</div>
+      <h1>UniAssist</h1>
+      <p>Your intelligent university companion</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Login</button>
+      <button class="auth-tab" onclick="switchTab('register')">Register</button>
+    </div>
+    <!-- Login Form -->
+    <div class="auth-form active" id="login-form">
+      <input type="email" id="login-email" placeholder="Email address" />
+      <div class="pass-wrap">
+        <input type="password" id="login-password" placeholder="Password" />
+        <button class="eye-btn" onclick="togglePass('login-password',this)" type="button">👁️</button>
+      </div>
+      <div class="remember-row">
+        <input type="checkbox" id="remember-me" />
+        <label for="remember-me">Remember me</label>
+      </div>
+      <button onclick="loginUser()">Login →</button>
+      <div class="auth-error" id="login-error"></div>
+    </div>
+    <!-- Register Form -->
+    <div class="auth-form" id="register-form">
+      <input type="text" id="reg-name" placeholder="Full name" />
+      <input type="email" id="reg-email" placeholder="Email address" />
+      <div class="pass-wrap">
+        <input type="password" id="reg-password" placeholder="Password (min 6 chars)" />
+        <button class="eye-btn" onclick="togglePass('reg-password',this)" type="button">👁️</button>
+      </div>
+      <button onclick="registerUser()">Create Account →</button>
+      <div class="auth-error" id="register-error"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Key Screen -->
+<div id="key-screen">
+  <div class="key-card">
+    <div class="logo">🔑</div>
+    <h2>Enter API Key</h2>
+    <p>Enter your Groq API key to start chatting.</p>
+    <div class="key-wrap">
+      <input type="password" id="api-key-input" placeholder="Enter your Groq API key (gsk_...)" />
+      <button class="eye-btn" onclick="togglePass('api-key-input',this)" type="button">👁️</button>
+    </div>
+    <button onclick="submitKey()" id="start-btn">Start Chatting →</button>
+    <div id="key-error"></div>
+    <p class="get-key">Get your free key at <a href="https://console.groq.com" target="_blank">console.groq.com</a></p>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" style="display:none; width:100%; overflow:hidden; flex-direction:row; height:100vh;">
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">🎓</div>
+        <div>
+          <div class="brand-name">UniAssist</div>
+          <div class="brand-sub">University AI Assistant</div>
+        </div>
+      </div>
+    </div>
+    <button id="new-chat-btn" onclick="newChat()">✏️ New Chat</button>
+    <div id="sidebar-chats">
+      <div class="chat-section-label">Recent Chats</div>
+      <div id="chat-list"></div>
+    </div>
+    <div id="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">U</div>
+        <div class="user-details">
+          <div class="user-name" id="user-name-display">Student</div>
+          <div class="user-email" id="user-email-display"></div>
+        </div>
+      </div>
+      <button class="sidebar-btn" onclick="toggleDark()"><span id="dark-icon">🌙</span> <span id="dark-label">Dark Mode</span></button>
+      <button class="sidebar-btn" onclick="resetNickname()">✏️ Change Nickname</button>
+      <button class="sidebar-btn" onclick="clearAllHistory()">🗑️ Clear All History</button>
+      <button class="sidebar-btn" onclick="logoutUser()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="chat-header">
+      <button id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+      <h2 id="chat-title">New Conversation</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="hdr-btn" onclick="toggleDark()">🌙</button>
+      </div>
+    </div>
+    <div id="messages">
+      <div id="welcome">
+        <div class="welcome-icon">🎓</div>
+        <h2 id="welcome-msg">How can I help you today?</h2>
+        <p>Ask me anything about campus life, academics, admissions, and more!</p>
+        <div class="suggestion-grid">
+          <div class="suggestion-card" onclick="quickAsk('What are the admission requirements?')"><div class="s-icon">📋</div><div class="s-title">Admissions</div><div class="s-desc">Requirements and process</div></div>
+          <div class="suggestion-card" onclick="quickAsk('How do I register for courses?')"><div class="s-icon">📚</div><div class="s-title">Course Registration</div><div class="s-desc">Register for classes</div></div>
+          <div class="suggestion-card" onclick="quickAsk('What scholarships are available?')"><div class="s-icon">💰</div><div class="s-title">Scholarships</div><div class="s-desc">Financial aid opportunities</div></div>
+          <div class="suggestion-card" onclick="quickAsk('Tell me about hostel facilities')"><div class="s-icon">🏠</div><div class="s-title">Hostel & Housing</div><div class="s-desc">Campus accommodation</div></div>
+          <div class="suggestion-card" onclick="quickAsk('What are the library hours?')"><div class="s-icon">📖</div><div class="s-title">Library</div><div class="s-desc">Hours and resources</div></div>
+          <div class="suggestion-card" onclick="quickAsk('How do I prepare for exams?')"><div class="s-icon">✏️</div><div class="s-title">Exam Prep</div><div class="s-desc">Tips and strategies</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="input-area">
+      <div id="input-box">
+        <textarea id="user-input" rows="1" placeholder="Message UniAssist..."></textarea>
+        <button class="input-btn" id="mic-btn" onclick="toggleVoice()">🎙️</button>
+        <button id="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">UniAssist can make mistakes. Verify important information.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let history = [];
+  let recognition = null;
+  let isRecording = false;
+  let currentUser = null;
+  let currentChatIndex = -1;
+  let isTyping = false;
+  let chatSessions = JSON.parse(localStorage.getItem('chatSessions') || '[]');
+
+  marked.setOptions({ breaks: true, gfm: true });
+
+  // Dark mode on load
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark');
+    document.getElementById('dark-icon').textContent = '☀️';
+    document.getElementById('dark-label').textContent = 'Light Mode';
+  }
+
+  // University keywords
+  const UNI_MAP = {
+    'lpu': 'Lovely Professional University',
+    'lovely professional': 'Lovely Professional University',
+    'chandigarh university': 'Chandigarh University',
+    'cu': 'Chandigarh University',
+    'punjab university': 'University of the Punjab',
+    'panjab university': 'Panjab University Chandigarh',
+    'amity': 'Amity University',
+    'vit': 'VIT University',
+    'srm': 'SRM University',
+    'bits': 'BITS Pilani',
+    'iit delhi': 'Indian Institute of Technology Delhi',
+    'iit bombay': 'Indian Institute of Technology Bombay',
+    'iit': 'Indian Institutes of Technology',
+    'nit': 'National Institute of Technology India',
+    'delhi university': 'University of Delhi',
+    'du': 'University of Delhi',
+    'jnu': 'Jawaharlal Nehru University',
+    'bhu': 'Banaras Hindu University',
+    'anna university': 'Anna University',
+    'osmania': 'Osmania University',
+    'upes': 'UPES University',
+    'manipal': 'Manipal Academy of Higher Education',
+    'symbiosis': 'Symbiosis International University',
+    'harvard': 'Harvard University',
+    'mit': 'Massachusetts Institute of Technology',
+    'stanford': 'Stanford University',
+    'oxford': 'University of Oxford',
+    'cambridge': 'University of Cambridge',
+    'yale': 'Yale University',
+    'princeton': 'Princeton University',
+    'columbia': 'Columbia University',
+    'caltech': 'California Institute of Technology',
+    'toronto': 'University of Toronto',
+    'melbourne': 'University of Melbourne',
+  };
+
+  // Show/hide password
+  function togglePass(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
+    else { input.type = 'password'; btn.textContent = '👁️'; }
+  }
+
+  function getGreeting() {
+    const h = new Date().getHours();
+    if (h>=5&&h<12) return 'Good morning';
+    if (h>=12&&h<17) return 'Good afternoon';
+    if (h>=17&&h<21) return 'Good evening';
+    return 'Good night';
+  }
+
+  function getNickname() { return localStorage.getItem('nickname')||null; }
+
+  function resetNickname() {
+    if (!confirm('Change your nickname?')) return;
+    localStorage.removeItem('nickname');
+    newChat();
+  }
+
+  // Auto login on page load
+  window.addEventListener('load', async () => {
+    const saved = JSON.parse(localStorage.getItem('rememberedUser') || 'null');
+    const savedKey = localStorage.getItem('groqApiKey');
+
+    if (saved && savedKey) {
+      // Show app INSTANTLY — don't wait for server
+      currentUser = { name: saved.name || 'Student', email: saved.email };
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('key-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      if (currentUser) {
+        document.getElementById('user-name-display').textContent = currentUser.name;
+        document.getElementById('user-email-display').textContent = currentUser.email;
+        document.getElementById('user-avatar').textContent = currentUser.name[0].toUpperCase();
+      }
+      loadChatList();
+      setTimeout(() => checkNickname(), 300);
+
+      // Authenticate with server in background silently
+      try {
+        const res = await fetch('/auto-login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: saved.email, password: saved.password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          currentUser = { name: data.name, email: data.email };
+          document.getElementById('user-name-display').textContent = data.name;
+          document.getElementById('user-avatar').textContent = data.name[0].toUpperCase();
+          await fetch('/set-key', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_key: savedKey })
+          });
+        }
+      } catch(e) {}
+      return;
+    }
+  });
+
+  function switchTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach((t,i) => {
+      t.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='register'));
+    });
+    document.getElementById('login-form').classList.toggle('active', tab==='login');
+    document.getElementById('register-form').classList.toggle('active', tab==='register');
+  }
+
+  async function loginUser() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const remember = document.getElementById('remember-me').checked;
+    if (!email||!password) { showAuthError('login','Please fill all fields'); return; }
+    const res = await fetch('/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      currentUser = { name: data.name, email };
+      if (remember) {
+        localStorage.setItem('rememberedUser', JSON.stringify({ email, password, name: data.name }));
+      } else {
+        localStorage.removeItem('rememberedUser');
+      }
+      showKeyScreen();
+    } else showAuthError('login', data.error);
+  }
+
+  async function registerUser() {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if (!name||!email||!password) { showAuthError('register','Please fill all fields'); return; }
+    if (password.length<6) { showAuthError('register','Password must be at least 6 chars'); return; }
+    const res = await fetch('/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, email, password})
+    });
+    const data = await res.json();
+    if (res.ok) { currentUser={name:data.name,email}; showKeyScreen(); }
+    else showAuthError('register', data.error);
+  }
+
+  function showAuthError(type, msg) {
+    const el = document.getElementById(type+'-error');
+    el.textContent = msg; el.style.display = 'block';
+  }
+
+  async function showKeyScreen() {
+    const savedKey = localStorage.getItem('groqApiKey');
+    if (savedKey) {
+      const res = await fetch('/set-key', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({api_key: savedKey})
+      });
+      if (res.ok) { showApp(); return; }
+    }
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('key-screen').style.display = 'flex';
+  }
+
+  async function submitKey() {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key) return;
+    document.getElementById('start-btn').textContent = 'Connecting...';
+    const res = await fetch('/set-key', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({api_key: key})
+    });
+    if (res.ok) {
+      localStorage.setItem('groqApiKey', key);
+      showApp();
+    } else {
+      document.getElementById('start-btn').textContent = 'Start Chatting →';
+      document.getElementById('key-error').textContent = 'Invalid key. Please try again.';
+    }
+  }
+
+  function showApp() {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('key-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    if (currentUser) {
+      document.getElementById('user-name-display').textContent = currentUser.name;
+      document.getElementById('user-email-display').textContent = currentUser.email;
+      document.getElementById('user-avatar').textContent = currentUser.name[0].toUpperCase();
+    }
+    loadChatList();
+    setTimeout(() => checkNickname(), 300);
+  }
+
+  function checkNickname() {
+    const nickname = getNickname();
+    const greeting = getGreeting();
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.remove();
+    if (!nickname) {
+      typeWriterMsg(`${greeting}! 👋 I'm **UniAssist**, your university AI companion.\n\nWhat should I call you? *(Type your nickname below)*`, () => {
+        window.waitingForNickname = true;
+      });
+    } else {
+      typeWriterMsg(`${greeting}, **${nickname}**! 👋 Great to see you again!\n\nI'm UniAssist, ready to help with anything about university life. What can I do for you today?`, () => {
+        setTimeout(() => showSuggestions(), 400);
+      });
+    }
+  }
+
+  function showSuggestions() {
+    const existing = document.getElementById('suggestions-row');
+    if (existing) existing.remove();
+    const div = document.createElement('div');
+    div.id = 'suggestions-row';
+    div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 0;max-width:560px;width:100%;margin:0 auto;animation:fadeIn 0.4s ease;';
+    div.innerHTML = `
+      <div class="suggestion-card" onclick="quickAsk('What are the admission requirements?')"><div class="s-icon">📋</div><div class="s-title">Admissions</div><div class="s-desc">Requirements and process</div></div>
+      <div class="suggestion-card" onclick="quickAsk('How do I register for courses?')"><div class="s-icon">📚</div><div class="s-title">Course Registration</div><div class="s-desc">Register for classes</div></div>
+      <div class="suggestion-card" onclick="quickAsk('What scholarships are available?')"><div class="s-icon">💰</div><div class="s-title">Scholarships</div><div class="s-desc">Financial aid opportunities</div></div>
+      <div class="suggestion-card" onclick="quickAsk('Tell me about hostel facilities')"><div class="s-icon">🏠</div><div class="s-title">Hostel & Housing</div><div class="s-desc">Campus accommodation</div></div>
+      <div class="suggestion-card" onclick="quickAsk('What are the library hours?')"><div class="s-icon">📖</div><div class="s-title">Library</div><div class="s-desc">Hours and resources</div></div>
+      <div class="suggestion-card" onclick="quickAsk('How do I prepare for exams?')"><div class="s-icon">✏️</div><div class="s-title">Exam Prep</div><div class="s-desc">Tips and strategies</div></div>`;
+    document.getElementById('messages').appendChild(div);
+    document.getElementById('messages').scrollTop = 99999;
+  }
+
+  async function logoutUser() {
+    await fetch('/logout', {method:'POST'});
+    localStorage.removeItem('rememberedUser');
+    localStorage.removeItem('groqApiKey');
+    currentUser=null; history=[]; currentChatIndex=-1;
+    window.waitingForNickname = false;
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+  }
+
+  function toggleDark() {
+    document.body.classList.toggle('dark');
+    const isDark = document.body.classList.contains('dark');
+    document.getElementById('dark-icon').textContent = isDark?'☀️':'🌙';
+    document.getElementById('dark-label').textContent = isDark?'Light Mode':'Dark Mode';
+    localStorage.setItem('darkMode', isDark);
+  }
+
+  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+  function loadChatList() {
+    const list = document.getElementById('chat-list');
+    list.innerHTML = '';
+    [...chatSessions].reverse().forEach((s,i) => {
+      const realIndex = chatSessions.length-1-i;
+      const item = document.createElement('div');
+      item.className = 'chat-item'+(realIndex===currentChatIndex?' active':'');
+      item.id = `chat-item-${realIndex}`;
+      item.innerHTML = `<span onclick="loadChat(${realIndex})">💬 ${s.title}</span>
+        <button class="delete-chat" onclick="deleteChat(event,${realIndex})">✕</button>`;
+      list.appendChild(item);
+    });
+  }
+
+  function loadChat(index) {
+    currentChatIndex = index;
+    const session = chatSessions[index];
+    if (!session) return;
+    history = (session.messages||[]).map(m=>({role:m.role,content:m.text}));
+    document.getElementById('chat-title').textContent = session.title;
+    const msgs = document.getElementById('messages');
+    msgs.innerHTML = '';
+    (session.messages||[]).forEach(m => renderMsg(m.text, m.role==='user'?'user':'bot'));
+    msgs.scrollTop = 99999;
+    document.querySelectorAll('.chat-item').forEach(el=>el.classList.remove('active'));
+    const activeItem = document.getElementById(`chat-item-${index}`);
+    if (activeItem) activeItem.classList.add('active');
+    if (window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
+  }
+
+  function deleteChat(event, index) {
+    event.stopPropagation();
+    if (!confirm('Delete this chat?')) return;
+    chatSessions.splice(index,1);
+    localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+    if (currentChatIndex===index) newChat();
+    else if (currentChatIndex>index) currentChatIndex--;
+    loadChatList();
+  }
+
+  function newChat() {
+    history=[]; currentChatIndex=-1;
+    window.waitingForNickname = false;
+    document.getElementById('chat-title').textContent = 'New Conversation';
+    document.getElementById('messages').innerHTML = '';
+    document.querySelectorAll('.chat-item').forEach(el=>el.classList.remove('active'));
+    if (window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
+    setTimeout(()=>checkNickname(),100);
+  }
+
+  function renderMsg(text, role) {
+    const row = document.createElement('div');
+    row.className = `msg-row ${role}`;
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = role==='bot'?'🎓':(currentUser?currentUser.name[0].toUpperCase():'U');
+    const content = document.createElement('div');
+    content.className = 'msg-content';
+    const name = document.createElement('div');
+    name.className = 'msg-name';
+    name.textContent = role==='bot'?'UniAssist':(currentUser?currentUser.name:'You');
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.innerHTML = role==='bot'?marked.parse(text):text;
+    content.appendChild(name); content.appendChild(bubble);
+    row.appendChild(avatar); row.appendChild(content);
+    document.getElementById('messages').appendChild(row);
+    document.getElementById('messages').scrollTop = 99999;
+    return bubble;
+  }
+
+  function typeWriterMsg(text, onDone) {
+    const welcome = document.getElementById('welcome');
+    if (welcome) welcome.remove();
+    const row = document.createElement('div');
+    row.className = 'msg-row bot';
+    row.style.animation = 'fadeIn 0.3s ease';
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = '🎓';
+    const content = document.createElement('div');
+    content.className = 'msg-content';
+    const name = document.createElement('div');
+    name.className = 'msg-name';
+    name.textContent = 'UniAssist';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    content.appendChild(name); content.appendChild(bubble);
+    row.appendChild(avatar); row.appendChild(content);
+    document.getElementById('messages').appendChild(row);
+    const words = text.split(' ');
+    let i=0; let current='';
+    const msgs = document.getElementById('messages');
+    const interval = setInterval(()=>{
+      if (i<words.length) {
+        current += (i===0?'':' ')+words[i];
+        bubble.innerHTML = marked.parse(current)+'<span class="cursor"></span>';
+        msgs.scrollTop = 99999; i++;
+      } else {
+        bubble.innerHTML = marked.parse(text);
+        clearInterval(interval);
+        if (onDone) onDone();
+      }
+    }, 25);
+  }
+
+  function showTyping() {
+    const row = document.createElement('div');
+    row.className = 'typing-row'; row.id = 'typing';
+    row.innerHTML = `<div class="msg-avatar" style="background:#2563eb;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;">🎓</div>
+      <div class="typing-bubble"><span></span><span></span><span></span></div>`;
+    document.getElementById('messages').appendChild(row);
+    document.getElementById('messages').scrollTop = 99999;
+  }
+
+  function quickAsk(text) {
+    const suggestions = document.getElementById('suggestions-row');
+    if (suggestions) suggestions.remove();
+    document.getElementById('user-input').value = text;
+    sendMessage();
+  }
+
+  async function checkForUniversityImage(text) {
+    const lower = text.toLowerCase();
+    let query = '';
+    for (const [key, val] of Object.entries(UNI_MAP)) {
+      if (lower.includes(key)) { query=val; break; }
+    }
+    if (!query) {
+      const match = text.match(/([A-Z][a-zA-Z\s]+(?:University|College|Institute|Academy))/);
+      if (match) query = match[1].trim();
+    }
+    if (!query) return;
+    try {
+      const res = await fetch('/university-image', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({query})
+      });
+      const data = await res.json();
+      if (data && data.title) showUniversityCard(data);
+    } catch(e){}
+  }
+
+  function showUniversityCard(data) {
+    const msgs = document.getElementById('messages');
+    const card = document.createElement('div');
+    card.className = 'uni-card';
+    card.innerHTML = `
+      ${data.image
+        ? `<img class="uni-card-img" src="${data.image}" alt="${data.title}" onerror="this.style.display='none'">`
+        : `<div class="uni-card-no-img">🎓</div>`}
+      <div class="uni-card-info">
+        <div class="uni-card-title">📍 ${data.title}</div>
+        ${data.description ? `<div class="uni-card-desc">${data.description}</div>` : ''}
+        ${data.url ? `<a class="uni-card-link" href="${data.url}" target="_blank">Learn More →</a>` : ''}
+      </div>`;
+    msgs.appendChild(card);
+    msgs.scrollTop = 99999;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('user-input');
+    const text = input.value.trim();
+    if (!text||isTyping) return;
+    input.value = ''; input.style.height = 'auto';
+
+    if (window.waitingForNickname) {
+      window.waitingForNickname = false;
+      const nickname = text.trim();
+      localStorage.setItem('nickname', nickname);
+      renderMsg(nickname, 'user');
+      document.getElementById('user-name-display').textContent = nickname;
+      setTimeout(()=>{
+        typeWriterMsg(`Nice to meet you, **${nickname}**! 🎉\n\nI'm here to help you with anything about university life. What can I help you with today?`,()=>{
+          setTimeout(()=>showSuggestions(),400);
+        });
+      },300);
+      return;
+    }
+
+    const suggestions = document.getElementById('suggestions-row');
+    if (suggestions) suggestions.remove();
+
+    if (history.length===0) {
+      const newSession = {title:text.slice(0,35), time:Date.now(), messages:[]};
+      chatSessions.push(newSession);
+      currentChatIndex = chatSessions.length-1;
+      document.getElementById('chat-title').textContent = text.slice(0,40);
+      localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+      loadChatList();
+    }
+
+    renderMsg(text, 'user');
+    history.push({role:'user', content:text});
+
+    if (currentChatIndex>=0) {
+      chatSessions[currentChatIndex].messages = history.map(m=>({role:m.role,text:m.content}));
+      localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+    }
+
+    showTyping();
+    isTyping = true;
+
+    const res = await fetch('/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message:text, history:history.slice(0,-1)})
+    });
+    document.getElementById('typing')?.remove();
+    const data = await res.json();
+    const reply = data.reply||data.error||'Something went wrong.';
+    history.push({role:'assistant', content:reply});
+
+    typeWriterMsg(reply, ()=>{
+      isTyping = false;
+      if (currentChatIndex>=0) {
+        chatSessions[currentChatIndex].messages = history.map(m=>({role:m.role,text:m.content}));
+        localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+      }
+      checkForUniversityImage(text);
+    });
+  }
+
+  function toggleVoice() {
+    if (!('webkitSpeechRecognition' in window)&&!('SpeechRecognition' in window)) { alert('Please use Chrome!'); return; }
+    if (isRecording) { recognition.stop(); return; }
+    const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+    recognition = new SR(); recognition.lang = 'en-US';
+    recognition.onstart = ()=>{ isRecording=true; document.getElementById('mic-btn').textContent='🔴'; document.getElementById('mic-btn').classList.add('recording'); document.getElementById('user-input').placeholder='Listening...'; };
+    recognition.onresult = (e)=>{ document.getElementById('user-input').value=e.results[0][0].transcript; sendMessage(); };
+    recognition.onend = ()=>{ isRecording=false; document.getElementById('mic-btn').textContent='🎙️'; document.getElementById('mic-btn').classList.remove('recording'); document.getElementById('user-input').placeholder='Message UniAssist...'; };
+    recognition.onerror = ()=>{ isRecording=false; document.getElementById('mic-btn').textContent='🎙️'; document.getElementById('mic-btn').classList.remove('recording'); document.getElementById('user-input').placeholder='Message UniAssist...'; };
+    recognition.start();
+  }
+
+  async function clearAllHistory() {
+    if (!confirm('Clear ALL chat history?')) return;
+    await fetch('/clear-history',{method:'POST'});
+    chatSessions=[]; currentChatIndex=-1;
+    localStorage.setItem('chatSessions','[]');
+    loadChatList(); newChat();
+  }
+
+  document.getElementById('user-input').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} });
+  document.getElementById('user-input').addEventListener('input',function(){ this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px'; });
+  document.getElementById('api-key-input').addEventListener('keydown',e=>{ if(e.key==='Enter')submitKey(); });
+  document.getElementById('login-email').addEventListener('keydown',e=>{ if(e.key==='Enter')loginUser(); });
+  document.getElementById('login-password').addEventListener('keydown',e=>{ if(e.key==='Enter')loginUser(); });
+</script>
+</body>
+</html>
